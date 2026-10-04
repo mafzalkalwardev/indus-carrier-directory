@@ -1,0 +1,14 @@
+node_modules
+.next
+data
+.env
+.env.*
+!.env.example
+ingest/.venv
+__pycache__
+*.pyc
+*.pyo
+tsconfig.tsbuildinfo
+.git
+agent-transcripts
+.cursor
