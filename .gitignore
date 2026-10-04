@@ -1,0 +1,9 @@
+node_modules
+.next
+data
+.env
+ingest/.venv
+__pycache__
+*.pyc
+*.pyo
+tsconfig.tsbuildinfo
