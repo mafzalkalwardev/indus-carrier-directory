@@ -38,7 +38,9 @@ export default async function HomePage({
       censusLoaded = census?.source_updated_at ?? census?.loaded_at ?? null;
     }
   } catch {
-    error = "The directory database is not reachable. Start it with npm run db, then load data with npm run ingest.";
+    error = process.env.DATABASE_URL
+      ? "The directory database is empty or still loading. Carrier records will appear after the FMCSA ingest finishes."
+      : "The directory database is not reachable. Start it with npm run db, then load data with npm run ingest.";
   }
 
   const carrierCount = states.reduce((sum, state) => sum + Number(state.count), 0);
