@@ -32,7 +32,8 @@ export default async function CarrierPage({ params }: { params: Promise<{ dot: s
   const dot = normalizeDot((await params).dot);
   if (!dot) notFound();
 
-  await refreshMotusOfficers(dot).catch(() => undefined);
+  // Do not block the profile on MOTUS (can take many seconds). Refresh in the background.
+  void refreshMotusOfficers(dot).catch(() => undefined);
   const carrier = await getCarrier(dot).catch(() => null);
   if (!carrier) notFound();
 

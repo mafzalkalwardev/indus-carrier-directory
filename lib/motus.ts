@@ -40,7 +40,7 @@ export async function refreshMotusOfficers(dot: string) {
   try {
     const response = await fetch(`https://motus.dot.gov/api/carriers/${encodeURIComponent(dot)}`, {
       headers: { Accept: "application/json", "User-Agent": "carrier-directory/1.0" },
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(4000),
       cache: "no-store",
     });
     if (!response.ok) return;

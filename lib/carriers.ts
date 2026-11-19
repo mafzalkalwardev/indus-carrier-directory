@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { query } from "@/lib/db";
 
 export type CarrierRow = {
@@ -255,7 +256,7 @@ export async function carriersByCity(state: string, city: string, page: number) 
   return { rows, total: Number(totals[0]?.count ?? 0), limit };
 }
 
-export async function stateIndex() {
+async function loadStateIndex() {
   return query<{ phy_state: string; count: string }>(
     `SELECT phy_state, count(*)::text AS count
      FROM carriers
@@ -265,7 +266,13 @@ export async function stateIndex() {
   );
 }
 
-export async function latestFeeds() {
+/** Cached — full GROUP BY over ~4.5M carriers is ~1s+ uncached. */
+export const stateIndex = unstable_cache(loadStateIndex, ["carrier-state-index"], {
+  revalidate: 3600,
+  tags: ["carrier-stats"],
+});
+
+async function loadLatestFeeds() {
   return query<{ feed_key: string; source_updated_at: string | null; loaded_at: string; row_count: string | null }>(
     `SELECT DISTINCT ON (feed_key) feed_key, source_updated_at, loaded_at, row_count::text
      FROM feed_runs
@@ -273,3 +280,8 @@ export async function latestFeeds() {
      ORDER BY feed_key, loaded_at DESC`,
   );
 }
+
+export const latestFeeds = unstable_cache(loadLatestFeeds, ["carrier-latest-feeds"], {
+  revalidate: 600,
+  tags: ["carrier-feeds"],
+});
