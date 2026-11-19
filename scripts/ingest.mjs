@@ -5,11 +5,15 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const venvDir = path.join(root, "ingest", ".venv");
-const venvPython = path.join(venvDir, "Scripts", "python.exe");
-const systemPython = path.join(process.env.LOCALAPPDATA ?? "", "Programs", "Python", "Python312", "python.exe");
+const isWin = process.platform === "win32";
+const venvPython = isWin
+  ? path.join(venvDir, "Scripts", "python.exe")
+  : path.join(venvDir, "bin", "python");
+const systemPython = isWin
+  ? path.join(process.env.LOCALAPPDATA ?? "", "Programs", "Python", "Python312", "python.exe")
+  : "python3";
 
-function loadEnv() {
-  const file = path.join(root, ".env");
+function loadEnvFile(file) {
   if (!existsSync(file)) return;
   for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
     const trimmed = line.trim();
@@ -21,10 +25,11 @@ function loadEnv() {
   }
 }
 
-loadEnv();
+loadEnvFile(path.join(root, ".env"));
+loadEnvFile(path.join(root, ".env.local"));
 
 if (!existsSync(venvPython)) {
-  const base = existsSync(systemPython) ? systemPython : "python";
+  const base = existsSync(systemPython) ? systemPython : isWin ? "python" : "python3";
   const created = spawnSync(base, ["-m", "venv", venvDir], { stdio: "inherit" });
   if (created.status !== 0) process.exit(created.status ?? 1);
   const installed = spawnSync(venvPython, ["-m", "pip", "install", "-r", path.join(root, "ingest", "requirements.txt")], {

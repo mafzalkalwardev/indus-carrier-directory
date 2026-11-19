@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { Copyable } from "@/components/Copyable";
 import { StatusPill } from "@/components/StatusPill";
 import type { CarrierRow } from "@/lib/carriers";
-import { padDot, recordStatus } from "@/lib/format";
+import { formatPhone, padDot, recordStatus } from "@/lib/format";
 
 export function CarrierList({
   carriers,
@@ -24,7 +25,15 @@ export function CarrierList({
         <Link className="result" key={carrier.dot_number} href={`/carriers/${carrier.dot_number}`}>
           <div className={`grade ${carrier.trust_grade ?? ""}`}>{carrier.trust_grade ?? "–"}</div>
           <div>
-            <h2>{carrier.legal_name ?? "Unnamed carrier"}</h2>
+            <h2>
+              {carrier.legal_name ? (
+                <Copyable value={carrier.legal_name} className="name" title="Copy legal name" as="span">
+                  {carrier.legal_name}
+                </Copyable>
+              ) : (
+                "Unnamed carrier"
+              )}
+            </h2>
             <div className="chips">
               <span className="chip accent">USDOT {padDot(carrier.dot_number)}</span>
               <StatusPill status={recordStatus(carrier.authority_status, carrier.status_code)} />
@@ -32,6 +41,20 @@ export function CarrierList({
                 <span className="chip">{[carrier.phy_city, carrier.phy_state].filter(Boolean).join(", ")}</span>
               ) : null}
             </div>
+            {carrier.phone || carrier.email ? (
+              <div className="contact-inline">
+                {carrier.phone ? (
+                  <Copyable value={carrier.phone} title="Copy phone" as="span">
+                    {formatPhone(carrier.phone) ?? carrier.phone}
+                  </Copyable>
+                ) : null}
+                {carrier.email ? (
+                  <Copyable value={carrier.email} title="Copy email" as="span">
+                    {carrier.email}
+                  </Copyable>
+                ) : null}
+              </div>
+            ) : null}
           </div>
           <div className="muted">{carrier.trust_score ?? "—"} / 100</div>
         </Link>

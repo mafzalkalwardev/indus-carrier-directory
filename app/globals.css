@@ -1147,6 +1147,80 @@ button:disabled { opacity: 0.6; cursor: wait; }
   font-size: 0.92rem;
 }
 .contact-row a:hover { border-color: var(--blue); color: var(--green-deep); }
+.copyable {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: #eef3f8;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 650;
+  font-size: 0.92rem;
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.copyable:hover { border-color: var(--blue); color: var(--green-deep); }
+.copyable.is-copied {
+  border-color: #86efac;
+  background: #ecfdf5;
+  color: var(--green-deep);
+}
+.copyable-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.copyable-hint {
+  flex: none;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.copyable.is-copied .copyable-hint { color: var(--green-deep); }
+.copyable.name {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+}
+.copyable.name .copyable-hint {
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.copyable.name:hover .copyable-hint,
+.copyable.name.is-copied .copyable-hint,
+.copyable.name:focus-visible .copyable-hint {
+  opacity: 1;
+  transform: none;
+}
+.result .copyable.name {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.2rem;
+  letter-spacing: -0.02em;
+}
+.contact-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.people .copyable {
+  margin-top: 4px;
+}
 .source-links { margin-top: 18px; }
 .official-side {
   background: #f8fafc;

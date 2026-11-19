@@ -1,5 +1,5 @@
 const FILES = [
-  ["carriers", "Carriers", "One row per USDOT: name, authority, operation, insurance, and score. Add search filters on the home page to download a subset."],
+  ["carriers", "Carriers", "One row per USDOT: legal name, DBA, MC, address, phone, email, authority, insurance, fleet, and score. Add search filters on the home page or desk to download a subset."],
   ["fleet", "Equipment counts", "Owned, term-leased, and trip-leased vehicle counts from the census, by type."],
   ["dockets", "Operating authority", "MOTUS docket status and BIPD on file."],
   ["authority", "Authority history", "Status changes, including grants and revocations."],

@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { Copyable } from "@/components/Copyable";
 import { SearchForm } from "@/components/SearchForm";
 import { ServiceStrip } from "@/components/ServiceStrip";
 import { StatusPill } from "@/components/StatusPill";
 import { latestFeeds, stateIndex } from "@/lib/carriers";
-import { operationLabel, padDot, recordStatus } from "@/lib/format";
+import { formatPhone, operationLabel, padDot, recordStatus } from "@/lib/format";
 import { countDirectory, filtersActive, readFilters, searchDirectory } from "@/lib/search";
 
 export default async function HomePage({
@@ -148,7 +149,15 @@ export default async function HomePage({
               <Link className="result" key={carrier.dot_number} href={`/carriers/${carrier.dot_number}`}>
                 <div className={`grade ${carrier.trust_grade ?? ""}`}>{carrier.trust_grade ?? "–"}</div>
                 <div>
-                  <h2>{carrier.legal_name ?? "Unnamed carrier"}</h2>
+                  <h2>
+                    {carrier.legal_name ? (
+                      <Copyable value={carrier.legal_name} className="name" title="Copy legal name" as="span">
+                        {carrier.legal_name}
+                      </Copyable>
+                    ) : (
+                      "Unnamed carrier"
+                    )}
+                  </h2>
                   <div className="chips">
                     <span className="chip accent">{asMc && mc ? mc : `USDOT ${padDot(carrier.dot_number)}`}</span>
                     {asMc ? <span className="chip">DOT {padDot(carrier.dot_number)}</span> : mc ? <span className="chip">{mc}</span> : null}
@@ -159,6 +168,20 @@ export default async function HomePage({
                     {carrier.carrier_operation ? <span className="chip">{operationLabel(carrier.carrier_operation)}</span> : null}
                     {carrier.insurance_cancel_pending ? <span className="pill warn">Cancellation pending</span> : null}
                   </div>
+                  {carrier.phone || carrier.email ? (
+                    <div className="contact-inline">
+                      {carrier.phone ? (
+                        <Copyable value={carrier.phone} title="Copy phone" as="span">
+                          {formatPhone(carrier.phone) ?? carrier.phone}
+                        </Copyable>
+                      ) : null}
+                      {carrier.email ? (
+                        <Copyable value={carrier.email} title="Copy email" as="span">
+                          {carrier.email}
+                        </Copyable>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
                 <div className="score-side">
                   <b>{carrier.trust_score ?? "—"}</b>

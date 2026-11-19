@@ -1,4 +1,4 @@
-import { identifierHitsSql, LIST_COLUMNS, type CarrierMatch, searchCarriers } from "@/lib/carriers";
+import { EXPORT_COLUMNS, identifierHitsSql, LIST_COLUMNS, type CarrierMatch, searchCarriers } from "@/lib/carriers";
 import { query } from "@/lib/db";
 import { STATE_NAMES } from "@/lib/states";
 
@@ -266,8 +266,23 @@ export async function countDirectory(filters: SearchFilters) {
 
 export function directorySql(filters: SearchFilters) {
   const source = fromClause(filters);
+  // Always project clean export headers (incl. email) from the carriers table.
+  // Number/MC matches use a subquery for identity hits; wrap those as a DOT filter.
+  if (!source.where && !source.numbered) {
+    return {
+      text: `SELECT ${EXPORT_COLUMNS} FROM carriers c ORDER BY c.legal_name`,
+      params: [] as unknown[],
+    };
+  }
   return {
-    text: `SELECT ${LIST_COLUMNS} FROM ${source.from} ${source.where} ORDER BY c.legal_name`,
+    text: `SELECT ${EXPORT_COLUMNS}
+           FROM carriers c
+           WHERE c.dot_number IN (
+             SELECT match_rows.dot_number FROM (
+               SELECT c.dot_number FROM ${source.from} ${source.where}
+             ) match_rows
+           )
+           ORDER BY c.legal_name`,
     params: source.params,
   };
 }

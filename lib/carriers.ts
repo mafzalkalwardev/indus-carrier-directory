@@ -80,9 +80,42 @@ export type CarrierRow = {
 };
 
 export const LIST_COLUMNS = `
-  dot_number, legal_name, dba_name, phy_city, phy_state, phone, authority_status, status_code,
+  dot_number, legal_name, dba_name, phy_city, phy_state, phone, email, authority_status, status_code,
   docket1prefix, docket1, carrier_operation, insurance_current, insurance_cancel_pending,
   trust_score, trust_grade, power_units
+`;
+
+/** Clean carrier CSV columns for /api/export (includes email + sensible headers). */
+export const EXPORT_COLUMNS = `
+  c.dot_number AS "USDOT",
+  c.legal_name AS "Legal Name",
+  c.dba_name AS "DBA Name",
+  COALESCE(c.docket1prefix, 'MC') AS "MC Prefix",
+  c.docket1 AS "MC Number",
+  c.phy_street AS "Street",
+  c.phy_city AS "City",
+  c.phy_state AS "State",
+  c.phy_zip AS "ZIP",
+  c.phone AS "Phone",
+  c.email AS "Email",
+  c.cell_phone AS "Cell Phone",
+  c.fax AS "Fax",
+  c.officer_1 AS "Officer 1",
+  c.officer_2 AS "Officer 2",
+  c.carrier_operation AS "Operation Code",
+  c.authority_status AS "Authority Status",
+  c.common_authority_status AS "Common Authority",
+  c.contract_authority_status AS "Contract Authority",
+  c.broker_authority_status AS "Broker Authority",
+  c.status_code AS "Census Status",
+  CASE WHEN c.insurance_current THEN 'Y' ELSE 'N' END AS "Insurance Current",
+  CASE WHEN c.insurance_cancel_pending THEN 'Y' ELSE 'N' END AS "Cancel Pending",
+  c.bipd_on_file AS "BIPD On File",
+  c.power_units AS "Power Units",
+  c.total_drivers AS "Drivers",
+  c.trust_score AS "Trust Score",
+  c.trust_grade AS "Trust Grade",
+  c.add_date AS "MC Registered"
 `;
 
 export type CarrierMatch = CarrierRow & { matched_on?: string | null };

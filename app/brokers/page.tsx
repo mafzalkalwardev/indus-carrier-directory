@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Copyable } from "@/components/Copyable";
 import { searchBrokers } from "@/lib/brokers";
 import { formatMoney, formatPhone, padDot } from "@/lib/format";
 
@@ -40,7 +41,15 @@ export default async function BrokersPage({ searchParams }: { searchParams: Prom
             <Link className="result" key={`${broker.dot_number}-${broker.docket_number}`} href={`/carriers/${broker.dot_number}`}>
               <div className={`grade ${broker.trust_grade ?? ""}`}>{broker.trust_grade ?? "–"}</div>
               <div>
-                <h2>{broker.legal_name ?? "Unnamed broker"}</h2>
+                <h2>
+                  {broker.legal_name ? (
+                    <Copyable value={broker.legal_name} className="name" title="Copy legal name" as="span">
+                      {broker.legal_name}
+                    </Copyable>
+                  ) : (
+                    "Unnamed broker"
+                  )}
+                </h2>
                 <div className="chips">
                   <span className="chip accent">USDOT {padDot(broker.dot_number)}</span>
                   {broker.docket_number ? <span className="chip">{broker.docket_number}</span> : null}
@@ -50,11 +59,25 @@ export default async function BrokersPage({ searchParams }: { searchParams: Prom
                   {broker.bipd_on_file ? <span className="chip">{formatMoney(broker.bipd_on_file)}</span> : null}
                   {broker.phy_city || broker.phy_state ? <span className="chip">{[broker.phy_city, broker.phy_state].filter(Boolean).join(", ")}</span> : null}
                 </div>
-                <p className="hint">
-                  {broker.phone ? formatPhone(broker.phone) : "No public phone"}
-                  {broker.email ? ` · ${broker.email}` : " · No public email"}
-                  {broker.trust_score != null ? ` · Directory grade ${broker.trust_grade ?? "–"} ${broker.trust_score}/100` : ""}
-                </p>
+                <div className="contact-inline">
+                  {broker.phone ? (
+                    <Copyable value={broker.phone} title="Copy phone" as="span">
+                      {formatPhone(broker.phone) ?? broker.phone}
+                    </Copyable>
+                  ) : (
+                    <span className="hint">No public phone</span>
+                  )}
+                  {broker.email ? (
+                    <Copyable value={broker.email} title="Copy email" as="span">
+                      {broker.email}
+                    </Copyable>
+                  ) : (
+                    <span className="hint">No public email</span>
+                  )}
+                </div>
+                {broker.trust_score != null ? (
+                  <p className="hint">Directory grade {broker.trust_grade ?? "–"} {broker.trust_score}/100</p>
+                ) : null}
                 {broker.authorities ? <p className="hint">{broker.authorities}</p> : null}
               </div>
             </Link>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Copyable } from "@/components/Copyable";
 import { StatusPill } from "@/components/StatusPill";
 import { ProfileActions } from "@/components/ProfileActions";
 import { getCarrier, latestFeeds } from "@/lib/carriers";
@@ -203,8 +204,23 @@ export default async function CarrierPage({ params }: { params: Promise<{ dot: s
             {carrier.carrier_operation ? <span className="chip">{operationLabel(carrier.carrier_operation)}</span> : null}
             {carrier.trust_grade ? <span className="chip">{carrier.trust_grade} · {carrier.trust_score ?? "—"}</span> : null}
           </div>
-          <h1>{carrier.legal_name ?? "Unnamed carrier"}</h1>
-          {carrier.dba_name ? <p className="muted">DBA {carrier.dba_name}</p> : null}
+          <h1>
+            {carrier.legal_name ? (
+              <Copyable value={carrier.legal_name} className="name" title="Copy legal name">
+                {carrier.legal_name}
+              </Copyable>
+            ) : (
+              "Unnamed carrier"
+            )}
+          </h1>
+          {carrier.dba_name ? (
+            <p className="muted">
+              DBA{" "}
+              <Copyable value={carrier.dba_name} className="name" title="Copy DBA name">
+                {carrier.dba_name}
+              </Copyable>
+            </p>
+          ) : null}
           <p className="muted">{location || "Location not on the census row"}</p>
           <div className="bs-stats">
             <div className="bs-stat">
@@ -241,8 +257,20 @@ export default async function CarrierPage({ params }: { params: Promise<{ dot: s
             </div>
           </div>
           <div className="contact-row">
-            {carrier.phone ? <a href={`tel:${carrier.phone}`}>{formatPhone(carrier.phone)}</a> : <span>No company phone</span>}
-            {carrier.email ? <a href={`mailto:${carrier.email}`}>{carrier.email}</a> : <span>No company email</span>}
+            {carrier.phone ? (
+              <Copyable value={carrier.phone} title="Copy phone">
+                {formatPhone(carrier.phone) ?? carrier.phone}
+              </Copyable>
+            ) : (
+              <span>No company phone</span>
+            )}
+            {carrier.email ? (
+              <Copyable value={carrier.email} title="Copy email">
+                {carrier.email}
+              </Copyable>
+            ) : (
+              <span>No company email</span>
+            )}
           </div>
         </div>
         <aside className="official-side">
@@ -251,10 +279,30 @@ export default async function CarrierPage({ params }: { params: Promise<{ dot: s
             <ul className="people">
               {officialCards.map((official) => (
                 <li key={`${official.name}-${official.email ?? ""}`}>
-                  <strong>{official.name}</strong>
+                  <strong>
+                    <Copyable value={official.name} className="name" title="Copy name">
+                      {official.name}
+                    </Copyable>
+                  </strong>
                   {official.title ? <div className="role">{official.title}</div> : null}
-                  <div>{official.phone ? <a href={`tel:${official.phone}`}>{formatPhone(official.phone) ?? official.phone}</a> : "No phone"}</div>
-                  <div>{official.email ? <a href={`mailto:${official.email}`}>{official.email}</a> : "No email"}</div>
+                  <div>
+                    {official.phone ? (
+                      <Copyable value={official.phone} title="Copy phone">
+                        {formatPhone(official.phone) ?? official.phone}
+                      </Copyable>
+                    ) : (
+                      "No phone"
+                    )}
+                  </div>
+                  <div>
+                    {official.email ? (
+                      <Copyable value={official.email} title="Copy email">
+                        {official.email}
+                      </Copyable>
+                    ) : (
+                      "No email"
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -330,13 +378,33 @@ export default async function CarrierPage({ params }: { params: Promise<{ dot: s
                 const name = [official.first_name, official.middle_name, official.last_name, official.suffix].filter(Boolean).join(" ");
                 return (
                   <li key={`${name}-${official.email}`}>
-                    <strong>{name || "Unnamed official"}</strong>
+                    <strong>
+                      {name ? (
+                        <Copyable value={name} className="name" title="Copy name">
+                          {name}
+                        </Copyable>
+                      ) : (
+                        "Unnamed official"
+                      )}
+                    </strong>
                     {official.title ? <div className="role">{official.title.replace(/_/g, " ")}</div> : null}
                     <div>
-                      {official.phone ? <a href={`tel:${official.phone}`}>{formatPhone(official.phone) ?? official.phone}</a> : "No phone"}
+                      {official.phone ? (
+                        <Copyable value={official.phone} title="Copy phone">
+                          {formatPhone(official.phone) ?? official.phone}
+                        </Copyable>
+                      ) : (
+                        "No phone"
+                      )}
                     </div>
                     <div>
-                      {official.email ? <a href={`mailto:${official.email}`}>{official.email}</a> : "No email"}
+                      {official.email ? (
+                        <Copyable value={official.email} title="Copy email">
+                          {official.email}
+                        </Copyable>
+                      ) : (
+                        "No email"
+                      )}
                     </div>
                   </li>
                 );
@@ -344,8 +412,20 @@ export default async function CarrierPage({ params }: { params: Promise<{ dot: s
             </ul>
           ) : carrier.officer_1 || carrier.officer_2 ? (
             <ul className="plain-list">
-              {carrier.officer_1 ? <li>{carrier.officer_1}</li> : null}
-              {carrier.officer_2 ? <li>{carrier.officer_2}</li> : null}
+              {carrier.officer_1 ? (
+                <li>
+                  <Copyable value={carrier.officer_1} className="name" title="Copy name">
+                    {carrier.officer_1}
+                  </Copyable>
+                </li>
+              ) : null}
+              {carrier.officer_2 ? (
+                <li>
+                  <Copyable value={carrier.officer_2} className="name" title="Copy name">
+                    {carrier.officer_2}
+                  </Copyable>
+                </li>
+              ) : null}
             </ul>
           ) : (
             <p>No company officials are listed for this DOT.</p>
@@ -605,7 +685,7 @@ export default async function CarrierPage({ params }: { params: Promise<{ dot: s
           <a href={`https://motus.dot.gov/customer/${carrier.dot_number}/account`} target="_blank" rel="noreferrer">MOTUS record</a>
           <a href={`https://safer.fmcsa.dot.gov/query.asp?searchtype=ANY&query_type=queryCarrierSnapshot&query_param=USDOT&query_string=${carrier.dot_number}`} target="_blank" rel="noreferrer">FMCSA SAFER</a>
           <a href={`https://ai.fmcsa.dot.gov/SMS/Carrier/${carrier.dot_number}/Overview.aspx`} target="_blank" rel="noreferrer">SMS overview</a>
-          <a href={`/api/export?dataset=carriers&q=${carrier.dot_number}`}>Download CSV</a>
+          <a href={`/api/export?dataset=carriers&find=dot&q=${carrier.dot_number}`}>Download CSV</a>
         </div>
       </section>
 

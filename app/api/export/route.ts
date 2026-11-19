@@ -6,41 +6,53 @@ export const dynamic = "force-dynamic";
 const DATASETS: Record<string, { filename: string; text: string }> = {
   fleet: {
     filename: "carrier-fleet.csv",
-    text: `SELECT dot_number, ownership, vehicle_group, vehicle_type, units FROM carrier_fleet ORDER BY dot_number, ownership, vehicle_type`,
+    text: `SELECT dot_number AS "USDOT", ownership AS "Ownership", vehicle_group AS "Vehicle Group",
+                  vehicle_type AS "Vehicle Type", units AS "Units"
+           FROM carrier_fleet ORDER BY dot_number, ownership, vehicle_type`,
   },
   insurance: {
     filename: "insurance-policies.csv",
-    text: `SELECT dot_number, docket_number, insurance_company_name, policy_no, ins_form_code, max_cov_amount, effective_date
+    text: `SELECT dot_number AS "USDOT", docket_number AS "Docket", insurance_company_name AS "Insurer",
+                  policy_no AS "Policy", ins_form_code AS "Form", max_cov_amount AS "Coverage",
+                  effective_date AS "Effective"
            FROM insurance_policies ORDER BY dot_number`,
   },
   cancellations: {
     filename: "insurance-history.csv",
-    text: `SELECT dot_number, docket_number, insurance_company_name, policy_no, filing_status_reason, effective_date, cancl_effective_date
+    text: `SELECT dot_number AS "USDOT", docket_number AS "Docket", insurance_company_name AS "Insurer",
+                  policy_no AS "Policy", filing_status_reason AS "Reason",
+                  effective_date AS "Effective", cancl_effective_date AS "Cancel Effective"
            FROM insurance_history ORDER BY dot_number, cancl_effective_date DESC NULLS LAST`,
   },
   authority: {
     filename: "authority-history.csv",
-    text: `SELECT dot_number, docket_number, op_auth_type, op_auth_status, reason, status_change_date
+    text: `SELECT dot_number AS "USDOT", docket_number AS "Docket", op_auth_type AS "Authority Type",
+                  op_auth_status AS "Status", reason AS "Reason", status_change_date AS "Changed"
            FROM authority_history ORDER BY dot_number, status_change_date`,
   },
   dockets: {
     filename: "dockets.csv",
-    text: `SELECT dot_number, docket_number, op_auth_type, op_auth_status, bipd_file, min_cov_amount
+    text: `SELECT dot_number AS "USDOT", docket_number AS "Docket", op_auth_type AS "Authority Type",
+                  op_auth_status AS "Status", bipd_file AS "BIPD File", min_cov_amount AS "Min Coverage"
            FROM dockets ORDER BY dot_number, docket_number`,
   },
   inspections: {
     filename: "inspections.csv",
-    text: `SELECT dot_number, inspection_id, insp_date, report_state, insp_level_id, viol_total, vehicle_oos_total, driver_oos_total
+    text: `SELECT dot_number AS "USDOT", inspection_id AS "Inspection ID", insp_date AS "Date",
+                  report_state AS "State", insp_level_id AS "Level", viol_total AS "Violations",
+                  vehicle_oos_total AS "Vehicle OOS", driver_oos_total AS "Driver OOS"
            FROM inspections ORDER BY insp_date, inspection_id`,
   },
   crashes: {
     filename: "crashes.csv",
-    text: `SELECT dot_number, crash_id, report_date, state, fatalities, injuries, tow_away
+    text: `SELECT dot_number AS "USDOT", crash_id AS "Crash ID", report_date AS "Date", state AS "State",
+                  fatalities AS "Fatalities", injuries AS "Injuries", tow_away AS "Tow Away"
            FROM crashes ORDER BY report_date, crash_id`,
   },
   vehicles: {
     filename: "inspected-vehicles.csv",
-    text: `SELECT i.dot_number, u.vin, u.unit_make, u.unit_type, u.license_plate, u.license_state, u.unit_number
+    text: `SELECT i.dot_number AS "USDOT", u.vin AS "VIN", u.unit_make AS "Make", u.unit_type AS "Type",
+                  u.license_plate AS "Plate", u.license_state AS "Plate State", u.unit_number AS "Unit"
            FROM inspection_units u
            JOIN inspections i ON i.inspection_id = u.inspection_id
            ORDER BY i.dot_number, u.vin`,
@@ -59,6 +71,7 @@ export async function GET(request: Request) {
   const dataset = url.searchParams.get("dataset") || "carriers";
   const filters = readFilters({
     q: url.searchParams.get("q") ?? undefined,
+    find: url.searchParams.get("find") ?? undefined,
     operation: url.searchParams.get("operation") ?? undefined,
     authority: url.searchParams.get("authority") ?? undefined,
     insurance: url.searchParams.get("insurance") ?? undefined,

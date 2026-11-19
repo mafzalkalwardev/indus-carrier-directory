@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Copyable } from "@/components/Copyable";
+import { formatPhone } from "@/lib/format";
 
 export const metadata = { title: "Load" };
 
@@ -37,12 +39,31 @@ export default async function LoadDetailPage({
         <h2>Broker</h2>
         {broker ? (
           <>
-            <p><strong>{broker}</strong>{load.grade ? ` · Grade ${load.grade}` : ""}</p>
-            <p className="hint">
-              {load.phone || "No public phone on this row"}
-              {load.email ? ` · ${load.email}` : " · No public email on this row"}
-              {load.dot ? ` · DOT ${load.dot}` : ""}
+            <p>
+              <strong>
+                <Copyable value={broker} className="name" title="Copy broker name">
+                  {broker}
+                </Copyable>
+              </strong>
+              {load.grade ? ` · Grade ${load.grade}` : ""}
             </p>
+            <div className="contact-inline">
+              {load.phone ? (
+                <Copyable value={load.phone} title="Copy phone">
+                  {formatPhone(load.phone) ?? load.phone}
+                </Copyable>
+              ) : (
+                <span className="hint">No public phone on this row</span>
+              )}
+              {load.email ? (
+                <Copyable value={load.email} title="Copy email">
+                  {load.email}
+                </Copyable>
+              ) : (
+                <span className="hint">No public email on this row</span>
+              )}
+            </div>
+            {load.dot ? <p className="hint">DOT {load.dot}</p> : null}
             {load.dot ? <p><Link href={`/carriers/${load.dot}`}>Open the broker record</Link></p> : null}
             <p><Link href={`/brokers?q=${encodeURIComponent(broker)}`}>Run a broker check</Link></p>
           </>
