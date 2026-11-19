@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "destination": "https://carriers.induswebagency.com/:path*",
+      "permanent": true
+    }
+  ]
+}
