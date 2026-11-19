@@ -1,9 +1,7 @@
 import Link from "next/link";
-import { Copyable } from "@/components/Copyable";
+import { CarrierResultRow } from "@/components/CarrierResultRow";
 import { DeskForm } from "@/components/DeskForm";
 import { RecentList } from "@/components/RecentList";
-import { StatusPill } from "@/components/StatusPill";
-import { formatPhone, operationLabel, padDot, recordStatus } from "@/lib/format";
 import { recentCarriers } from "@/lib/recent";
 import { countDirectory, filterQuery, filtersActive, readFilters, searchDirectory } from "@/lib/search";
 
@@ -65,53 +63,9 @@ export default async function DeskPage({
             <span>{total.toLocaleString()} match{total === 1 ? "" : "es"}{results.length < total ? ` · showing ${results.length}` : ""}</span>
             <a href={`/api/export?${download.toString()}`}>Download CSV</a>
           </div>
-          {results.map((carrier) => {
-            const status = recordStatus(carrier.authority_status, carrier.status_code);
-            const mc = carrier.docket1 ? `${carrier.docket1prefix ?? "MC"} ${carrier.docket1}` : null;
-            return (
-              <Link className="result" key={carrier.dot_number} href={`/carriers/${carrier.dot_number}`}>
-                <div className={`grade ${carrier.trust_grade ?? ""}`}>{carrier.trust_grade ?? "–"}</div>
-                <div>
-                  <h2>
-                    {carrier.legal_name ? (
-                      <Copyable value={carrier.legal_name} className="name" title="Copy legal name" as="span">
-                        {carrier.legal_name}
-                      </Copyable>
-                    ) : (
-                      "Unnamed carrier"
-                    )}
-                  </h2>
-                  <div className="chips">
-                    <span className="chip accent">USDOT {padDot(carrier.dot_number)}</span>
-                    {mc ? <span className="chip">{mc}</span> : null}
-                    <StatusPill status={status} />
-                    {carrier.phy_city || carrier.phy_state ? (
-                      <span className="chip">{[carrier.phy_city, carrier.phy_state].filter(Boolean).join(", ")}</span>
-                    ) : null}
-                    {carrier.carrier_operation ? <span className="chip">{operationLabel(carrier.carrier_operation)}</span> : null}
-                  </div>
-                  {carrier.phone || carrier.email ? (
-                    <div className="contact-inline">
-                      {carrier.phone ? (
-                        <Copyable value={carrier.phone} title="Copy phone" as="span">
-                          {formatPhone(carrier.phone) ?? carrier.phone}
-                        </Copyable>
-                      ) : null}
-                      {carrier.email ? (
-                        <Copyable value={carrier.email} title="Copy email" as="span">
-                          {carrier.email}
-                        </Copyable>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-                <div className="score-side">
-                  <b>{carrier.trust_score ?? "—"}</b>
-                  <span className="muted">/ 100</span>
-                </div>
-              </Link>
-            );
-          })}
+          {results.map((carrier) => (
+            <CarrierResultRow key={carrier.dot_number} carrier={carrier} />
+          ))}
         </section>
       ) : (
         <section className="snap" style={{ marginTop: 18 }}>

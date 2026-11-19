@@ -1,10 +1,8 @@
 import Link from "next/link";
-import { Copyable } from "@/components/Copyable";
+import { CarrierResultRow } from "@/components/CarrierResultRow";
 import { SearchForm } from "@/components/SearchForm";
 import { ServiceStrip } from "@/components/ServiceStrip";
-import { StatusPill } from "@/components/StatusPill";
 import { latestFeeds, stateIndex } from "@/lib/carriers";
-import { formatPhone, operationLabel, padDot, recordStatus } from "@/lib/format";
 import { countDirectory, filtersActive, readFilters, searchDirectory } from "@/lib/search";
 
 export default async function HomePage({
@@ -141,55 +139,9 @@ export default async function HomePage({
               <p>One record owns this USDOT number. Another uses it as an MC number. Open the one you meant.</p>
             </div>
           ) : null}
-          {results.map((carrier) => {
-            const status = recordStatus(carrier.authority_status, carrier.status_code);
-            const mc = carrier.docket1 ? `${carrier.docket1prefix ?? "MC"} ${carrier.docket1}` : null;
-            const asMc = carrier.matched_on === "mc";
-            return (
-              <Link className="result" key={carrier.dot_number} href={`/carriers/${carrier.dot_number}`}>
-                <div className={`grade ${carrier.trust_grade ?? ""}`}>{carrier.trust_grade ?? "–"}</div>
-                <div>
-                  <h2>
-                    {carrier.legal_name ? (
-                      <Copyable value={carrier.legal_name} className="name" title="Copy legal name" as="span">
-                        {carrier.legal_name}
-                      </Copyable>
-                    ) : (
-                      "Unnamed carrier"
-                    )}
-                  </h2>
-                  <div className="chips">
-                    <span className="chip accent">{asMc && mc ? mc : `USDOT ${padDot(carrier.dot_number)}`}</span>
-                    {asMc ? <span className="chip">DOT {padDot(carrier.dot_number)}</span> : mc ? <span className="chip">{mc}</span> : null}
-                    <StatusPill status={status} />
-                    {carrier.phy_city || carrier.phy_state ? (
-                      <span className="chip">{[carrier.phy_city, carrier.phy_state].filter(Boolean).join(", ")}</span>
-                    ) : null}
-                    {carrier.carrier_operation ? <span className="chip">{operationLabel(carrier.carrier_operation)}</span> : null}
-                    {carrier.insurance_cancel_pending ? <span className="pill warn">Cancellation pending</span> : null}
-                  </div>
-                  {carrier.phone || carrier.email ? (
-                    <div className="contact-inline">
-                      {carrier.phone ? (
-                        <Copyable value={carrier.phone} title="Copy phone" as="span">
-                          {formatPhone(carrier.phone) ?? carrier.phone}
-                        </Copyable>
-                      ) : null}
-                      {carrier.email ? (
-                        <Copyable value={carrier.email} title="Copy email" as="span">
-                          {carrier.email}
-                        </Copyable>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-                <div className="score-side">
-                  <b>{carrier.trust_score ?? "—"}</b>
-                  <span className="muted">/ 100</span>
-                </div>
-              </Link>
-            );
-          })}
+          {results.map((carrier) => (
+            <CarrierResultRow key={carrier.dot_number} carrier={carrier} />
+          ))}
         </section>
       ) : (
         <p className="hint">
