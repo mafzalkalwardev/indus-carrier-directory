@@ -5,14 +5,20 @@
     "db": "node scripts/db.mjs",
     "ingest": "node scripts/ingest.mjs",
     "ingest:safety": "node scripts/ingest.mjs --safety",
+    "ingest:score": "node scripts/ingest.mjs score",
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "lint:soft-leak": "node scripts/ci-soft-leak-lint.mjs",
+    "test:loads-sanitize": "node scripts/test-public-load-detail.mjs",
+    "test:motus-contact": "node scripts/test-motus-company-contact.mjs",
+    "test": "npm run lint:soft-leak && npm run test:loads-sanitize && npm run test:motus-contact"
   },
   "dependencies": {
     "embedded-postgres": "^18.1.0-beta.16",
     "next": "^15.5.4",
     "pg": "^8.16.3",
+    "pg-copy-streams": "^7.0.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },

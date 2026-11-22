@@ -4,6 +4,7 @@ import { Navbar } from "@/components/Navbar";
 import { SideRails } from "@/components/SideRails";
 import { SiteFooter } from "@/components/SiteFooter";
 import "./globals.css";
+import "./globals-tokens.css";
 
 const sans = IBM_Plex_Sans({
   subsets: ["latin"],

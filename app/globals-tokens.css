@@ -1,0 +1,18 @@
+/* Aliases for shared directory + live-board surfaces (see globals.css). */
+:root {
+  --accent: var(--green);
+  --accent-ink: #f7faf8;
+  --ink-muted: var(--muted);
+  --paper-2: #e8eef8;
+  --danger: var(--red);
+  --radius: 2px;
+  --space-1: 0.35rem;
+  --space-2: 0.7rem;
+  --space-3: 1.25rem;
+  --space-4: 2rem;
+}
+
+.button {
+  /* Shared CTA weight for Live board + directory */
+  font-weight: 600;
+}

@@ -5,4 +5,6 @@ export const brand = {
   phoneHref: "tel:+15127616399",
   email: "industransportsllc@gmail.com",
   place: "Austin, TX",
+  /** Laneora desktop dispatch product — marketing / download CTA only (no session proxy). */
+  laneoraUrl: "https://mafzalkalwardev.github.io/laneora/",
 };

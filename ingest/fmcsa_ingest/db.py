@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 
 import psycopg
@@ -7,7 +8,11 @@ from psycopg import sql
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMA_DIR = ROOT / "schema"
 SAFETY_TABLESPACE = "fmcsa_safety"
-SAFETY_DIR = Path(r"C:/carrier-data/pg-safety")
+SAFETY_DIR = (
+    Path(r"C:/carrier-data/pg-safety")
+    if sys.platform.startswith("win")
+    else Path("/var/lib/postgresql/fmcsa_safety")
+)
 
 
 def database_url() -> str:
@@ -69,18 +74,14 @@ def apply_schema(conn) -> None:
             for statement in split_sql(script):
                 cur.execute(statement)
         conn.commit()
-    with conn.cursor() as cur:
-        for table in ("inspections", "crashes"):
-            for year in range(2000, 2029):
-                cur.execute(
-                    f"""
-                    CREATE TABLE IF NOT EXISTS {table}_y{year} PARTITION OF {table}
-                    FOR VALUES FROM ('{year}-01-01') TO ('{year + 1}-01-01')
-                    """
-                )
-    conn.commit()
-    ensure_safety_tablespace(conn)
-    move_safety_relations(conn)
+    ensure_year_partitions(conn, "inspections", "insp_date")
+    ensure_year_partitions(conn, "crashes", "report_date")
+    try:
+        ensure_safety_tablespace(conn)
+        move_safety_relations(conn)
+    except Exception as exc:  # noqa: BLE001 — tablespace is optional on Linux VPS
+        conn.rollback()
+        print(f"safety tablespace skipped: {exc}", flush=True)
     with conn.cursor() as cur:
         cur.execute("UPDATE carriers SET insurance_cancel_pending = false WHERE insurance_cancel_pending")
         cur.execute(
@@ -97,7 +98,53 @@ def apply_schema(conn) -> None:
     conn.commit()
 
 
+def ensure_year_partitions(conn, table: str, date_col: str) -> None:
+    """Create yYYYY partitions even when DEFAULT already holds those years' rows."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT c.relname
+            FROM pg_inherits i
+            JOIN pg_class c ON c.oid = i.inhrelid
+            JOIN pg_class p ON p.oid = i.inhparent
+            JOIN pg_namespace n ON n.oid = p.relnamespace
+            WHERE n.nspname = 'public' AND p.relname = %s
+            """,
+            (table,),
+        )
+        existing = {row[0] for row in cur.fetchall()}
+        missing = [year for year in range(2000, 2029) if f"{table}_y{year}" not in existing]
+        if not missing:
+            return
+
+        default = f"{table}_default"
+        print(f"creating {len(missing)} {table} year partitions (moving rows out of {default})", flush=True)
+        cur.execute(sql.SQL("ALTER TABLE {} DETACH PARTITION {}").format(sql.Identifier(table), sql.Identifier(default)))
+        for year in missing:
+            cur.execute(
+                f"""
+                CREATE TABLE IF NOT EXISTS {table}_y{year} PARTITION OF {table}
+                FOR VALUES FROM ('{year}-01-01') TO ('{year + 1}-01-01')
+                """
+            )
+        # Route detached default rows into the new year partitions.
+        cur.execute(sql.SQL("INSERT INTO {} SELECT * FROM {}").format(sql.Identifier(table), sql.Identifier(default)))
+        cur.execute(sql.SQL("TRUNCATE {}").format(sql.Identifier(default)))
+        cur.execute(
+            sql.SQL("ALTER TABLE {} ATTACH PARTITION {} DEFAULT").format(
+                sql.Identifier(table),
+                sql.Identifier(default),
+            )
+        )
+        print(f"year partitions ready for {table}", flush=True)
+    conn.commit()
+
+
 def ensure_safety_tablespace(conn) -> None:
+    if not sys.platform.startswith("win"):
+        # On the Linux VPS, keep safety tables on the default tablespace.
+        # Creating an extra tablespace needs postgres-owned dirs and is optional.
+        return
     SAFETY_DIR.mkdir(parents=True, exist_ok=True)
     conn.commit()
     previous = conn.autocommit
@@ -118,6 +165,10 @@ def ensure_safety_tablespace(conn) -> None:
 
 
 def move_safety_relations(conn) -> None:
+    if not sys.platform.startswith("win"):
+        # Linux VPS keeps safety tables on pg_default; moving mid-ingest deadlocks app traffic.
+        print(f"skip move: tablespace relocation disabled on {sys.platform}", flush=True)
+        return
     with conn.cursor() as cur:
         cur.execute(
             """

@@ -31,6 +31,28 @@
 
 INDUS Transports FMCSA carrier directory for searchable carrier records and logistics prospecting.
 
+## Live board (local)
+
+Loads UI talks to a **Live board** public API shape only — Soft/DAT never appear in the browser.
+
+```bash
+# Mock board (no Soft / helper required)
+LOADS_ADAPTER=mock npm run dev
+# open http://localhost:3000/loads
+```
+
+Production env (server-only, never `NEXT_PUBLIC_*`):
+
+- `LANEORA_API_BASE`, `LANEORA_USERNAME`, `LANEORA_PASSWORD`
+- `LOADS_HELPER_TOKEN` (shared with CDP helper `:8799`)
+- `MOTUS_PROXY_BASE=http://127.0.0.1:8799`
+
+See `GLOSSARY.md`, `docs/ADR-001-live-loads-ports.md`, `docs/OPS-TOPOLOGY.md`.
+
+```bash
+npm test   # Soft-leak lint + public detail sanitize check
+```
+
 ---
 
 ## Discoverability

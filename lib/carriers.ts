@@ -78,10 +78,12 @@ export type CarrierRow = {
   live_safety_rating: string | null;
   live_safety_rating_date: string | null;
   prior_revoke_flag: string | null;
+  motus_officers_at?: string | null;
+  motus_authorities_at?: string | null;
 };
 
 export const LIST_COLUMNS = `
-  dot_number, legal_name, dba_name, phy_city, phy_state, phone, email, authority_status, status_code,
+  dot_number, legal_name, dba_name, phy_city, phy_state, phone, cell_phone, fax, email, authority_status, status_code,
   docket1prefix, docket1, carrier_operation, insurance_current, insurance_cancel_pending,
   trust_score, trust_grade, power_units
 `;
