@@ -485,16 +485,26 @@ def search(body: dict[str, Any]) -> dict[str, Any]:
     tracking = str(body.get("tracking") or "ALL").upper()
     if tracking not in ("ALL", "TRACKING", "NO_TRACKING"):
         tracking = "ALL"
-    include_board = body.get("include_load_board", body.get("includeLoadBoard", True))
-    include_private = body.get("include_private_network", body.get("includePrivateNetwork", True))
+    # JSON null must not become False — DAT rejects both boards off (RequestError).
+    def _flag(primary: str, alt: str, default: bool = True) -> bool:
+        if primary in body:
+            val = body.get(primary)
+        elif alt in body:
+            val = body.get(alt)
+        else:
+            return default
+        return default if val is None else bool(val)
+
+    include_board = _flag("include_load_board", "includeLoadBoard", True)
+    include_private = _flag("include_private_network", "includePrivateNetwork", True)
     order_by = str(body.get("order_by") or body.get("orderBy") or "AGE_ASC").upper()
     if order_by not in ("AGE_ASC", "AGE_DESC", "RATE_DESC", "RATE_ASC", "DISTANCE_ASC", "DISTANCE_DESC"):
         order_by = "AGE_ASC"
 
     criteria: dict[str, Any] = {
         "audience": {
-            "includeLoadBoard": bool(include_board),
-            "includePrivateNetwork": bool(include_private),
+            "includeLoadBoard": include_board,
+            "includePrivateNetwork": include_private,
         },
         "lane": lane,
         "equipment": {"types": equipment_types(body.get("equipment"))},

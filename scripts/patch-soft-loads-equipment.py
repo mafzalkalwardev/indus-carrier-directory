@@ -117,14 +117,36 @@ NEW_REMOTE = '''        length_ft = body.get("length_ft", body.get("lengthFt"))
                 remote_body["length_ft"] = length_ft
             if weight_lbs not in (None, ""):
                 remote_body["weight_lbs"] = weight_lbs
+            # Helper CDP rejects some null combos (e.g. include_load_board + include_private_network).
+            remote_body = {k: v for k, v in remote_body.items() if v is not None}
             remote = _remote_find_loads(remote_body)
 '''
+
+STRIP_NONES_NEEDLE = "            remote = _remote_find_loads(remote_body)"
+STRIP_NONES_REPL = (
+    "            # Helper CDP rejects some null combos (e.g. include_load_board + include_private_network).\n"
+    "            remote_body = {k: v for k, v in remote_body.items() if v is not None}\n"
+    "            remote = _remote_find_loads(remote_body)"
+)
+
+
+def _ensure_strip_nones(text: str) -> tuple[str, bool]:
+    if "if v is not None" in text and "remote_body.items()" in text:
+        return text, False
+    if STRIP_NONES_NEEDLE not in text:
+        raise SystemExit("remote_find_loads call not found for null-strip")
+    return text.replace(STRIP_NONES_NEEDLE, STRIP_NONES_REPL, 1), True
 
 
 def main() -> None:
     text = PATH.read_text(encoding="utf-8")
     if "straight box" in text and 'remote_body["length_ft"]' in text:
-        print("ALREADY_PATCHED")
+        text, changed = _ensure_strip_nones(text)
+        if changed:
+            PATH.write_text(text, encoding="utf-8")
+            print("PATCHED_NULL_STRIP", PATH)
+        else:
+            print("ALREADY_PATCHED")
         return
     if OLD_NORMALIZE not in text:
         raise SystemExit("normalize block not found")
