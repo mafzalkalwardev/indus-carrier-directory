@@ -1,5 +1,6 @@
 import { query } from "@/lib/db";
 import { padDot } from "@/lib/format";
+import { siteOrigin } from "@/lib/site";
 
 const PAGE_SIZE = 50000;
 
@@ -7,7 +8,7 @@ export async function GET(_request: Request, context: { params: Promise<{ state:
   const { state, page } = await context.params;
   const code = state.toUpperCase();
   const pageNumber = Math.max(1, Number(page) || 1);
-  const origin = process.env.SITE_ORIGIN ?? "http://localhost:3000";
+  const origin = siteOrigin();
   const offset = (pageNumber - 1) * PAGE_SIZE;
 
   const rows = await query<{ dot_number: string }>(

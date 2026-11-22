@@ -55,7 +55,8 @@ export default async function HomePage({
         <p className="kicker">Carrier lookup</p>
         <h1>Check a carrier before the truck rolls</h1>
         <p className="lede">
-          USDOT, MC, name, phone, or email, narrowed by a city or state in the same bar.
+          INDUS Transports is an FMCSA carrier directory and dispatcher desk for carriers, brokers, and shippers.
+          Search USDOT, MC, name, phone, or email, then open loads, broker checks, and desk tools from Austin, TX.
         </p>
         <SearchForm filters={filters} />
         {searching ? null : (
@@ -77,6 +78,42 @@ export default async function HomePage({
       {searching ? null : <ServiceStrip />}
       {searching ? null : (
           <>
+            <section className="info-block" aria-labelledby="what-is-indus">
+              <h2 className="section-title" id="what-is-indus">What is INDUS Transports?</h2>
+              <p>
+                INDUS Transports LLC runs a public carrier directory built from FMCSA files, plus a live load board search
+                and a dispatcher desk. Dispatchers and shippers look up a DOT or MC, check authority and insurance signals,
+                then move on to loads, brokers, or setup help without leaving the site.
+              </p>
+            </section>
+            <section className="info-block" aria-labelledby="what-can-indus-do">
+              <h2 className="section-title" id="what-can-indus-do">What can INDUS Transports do?</h2>
+              <div className="resource-grid">
+                <Link className="resource" href="/">
+                  <strong>Look up carriers</strong>
+                  <p>Search USDOT, MC, legal name, phone, or email and open a profile with authority and insurance context.</p>
+                </Link>
+                <Link className="resource" href="/loads">
+                  <strong>Search loads</strong>
+                  <p>Run origin, equipment, length, and age filters on the live board and expand a row for booking contact.</p>
+                </Link>
+                <Link className="resource" href="/brokers">
+                  <strong>Check brokers</strong>
+                  <p>Confirm who you are booking with before you send a rate confirmation.</p>
+                </Link>
+                <Link className="resource" href="/desk">
+                  <strong>Use the desk</strong>
+                  <p>Ask for dispatch, authority help, fuel card setup, or lane coverage from the Austin desk.</p>
+                </Link>
+              </div>
+            </section>
+            <section className="info-block" aria-labelledby="who-is-indus-for">
+              <h2 className="section-title" id="who-is-indus-for">Who is INDUS Transports for?</h2>
+              <p>
+                Owner-operators, fleet dispatchers, brokers, and shippers who need a fast FMCSA lookup before a truck rolls,
+                plus a desk that can help with loads, authority, and fuel.
+              </p>
+            </section>
             <section className="info-block">
               <div className="result-bar">
                 <h2 className="section-title">Partners</h2>

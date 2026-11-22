@@ -12,7 +12,12 @@ import { availableLoads, readLoadQuery, type LoadListing } from "@/lib/loads";
 import { rateLimit } from "@/lib/rate-limit";
 import { STATE_NAMES } from "@/lib/states";
 
-export const metadata = { title: "Search loads" };
+export const metadata = {
+  title: "Search loads",
+  description:
+    "Search trucking loads by origin, equipment, length, and age on the INDUS Transports live board. Expand a row for booking phone and email.",
+  alternates: { canonical: "/loads" },
+};
 
 type SearchParams = {
   state?: string;

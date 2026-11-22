@@ -1,10 +1,12 @@
 import { query } from "@/lib/db";
+import { siteOrigin } from "@/lib/site";
 
 const PAGE_SIZE = 50000;
 
 export async function GET() {
-  const origin = process.env.SITE_ORIGIN ?? "http://localhost:3000";
+  const origin = siteOrigin();
   let body = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+  body += `<sitemap><loc>${origin}/sitemaps/core</loc></sitemap>\n`;
   try {
     const states = await query<{ phy_state: string; count: string }>(
       `SELECT phy_state, count(*)::text AS count
@@ -21,7 +23,7 @@ export async function GET() {
       }
     }
   } catch {
-    body += `<sitemap><loc>${origin}/</loc></sitemap>\n`;
+    /* core sitemap still listed above */
   }
   body += `</sitemapindex>`;
   return new Response(body, { headers: { "Content-Type": "application/xml" } });

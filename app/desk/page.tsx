@@ -5,7 +5,11 @@ import { RecentList } from "@/components/RecentList";
 import { recentCarriers } from "@/lib/recent";
 import { countDirectory, filterQuery, filtersActive, readFilters, searchDirectory } from "@/lib/search";
 
-export const metadata = { title: "Dispatcher desk" };
+export const metadata = {
+  title: "Dispatcher desk",
+  description: "INDUS Transports dispatcher desk for dispatch help, authority and MC setup, fuel cards, and lane coverage from Austin, TX.",
+  alternates: { canonical: "/desk" },
+};
 
 export default async function DeskPage({
   searchParams,
