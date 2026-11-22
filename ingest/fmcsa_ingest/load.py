@@ -110,15 +110,43 @@ def staging_count(cur, table: str) -> int:
     return int(cur.fetchone()[0])
 
 
+def _tablespace_if_usable(cur, name: str | None) -> str | None:
+    if not name:
+        return None
+    cur.execute("SELECT 1 FROM pg_tablespace WHERE spcname = %s", (name,))
+    if not cur.fetchone():
+        return None
+    try:
+        cur.execute("SAVEPOINT ts_probe")
+        cur.execute(f"SET LOCAL temp_tablespaces = {name}")
+        cur.execute("RELEASE SAVEPOINT ts_probe")
+        return name
+    except Exception as exc:  # noqa: BLE001 — privilege / config issues
+        cur.execute("ROLLBACK TO SAVEPOINT ts_probe")
+        print(f"  tablespace {name} unusable ({exc}); staging on pg_default", flush=True)
+        return None
+
+
 def load_csv(conn, feed_key: str, path: Path) -> tuple[list[str], str, int]:
     columns = read_header(path)
     table = f"stg_{feed_key}"
-    tablespace = SAFETY_TABLESPACE if feed_key in SAFETY_FEEDS or feed_key == "census" else None
+    want_ts = SAFETY_TABLESPACE if feed_key in SAFETY_FEEDS or feed_key == "census" else None
     with conn.cursor() as cur:
-        if tablespace:
-            cur.execute(f"SET temp_tablespaces = {tablespace}")
+        tablespace = _tablespace_if_usable(cur, want_ts)
+        if want_ts:
+            # Large feeds always get more work_mem; tablespace is optional on Linux VPS.
             cur.execute("SET work_mem = '512MB'")
-        create_staging(cur, table, columns, tablespace)
+            if tablespace:
+                cur.execute(f"SET temp_tablespaces = {tablespace}")
+            else:
+                print(f"  tablespace {want_ts} missing or unusable; staging on pg_default", flush=True)
+        try:
+            create_staging(cur, table, columns, tablespace)
+        except Exception:
+            if not tablespace:
+                raise
+            print(f"  staging on {tablespace} failed; retrying pg_default", flush=True)
+            create_staging(cur, table, columns, None)
         print(f"  copying {feed_key} into {table}", flush=True)
         copy_csv(cur, table, path)
         count = staging_count(cur, table)
@@ -149,6 +177,12 @@ CARRIER_INDEXES = (
 
 
 def drop_carrier_indexes(cur) -> None:
+    # Hot-path DROP INDEX locks live reads. Opt-in only (maintenance window).
+    import os
+
+    if os.environ.get("ALLOW_DROP_INDEXES", "").strip().lower() not in {"1", "true", "yes"}:
+        print("  skipping DROP INDEX (set ALLOW_DROP_INDEXES=1 for maintenance window)", flush=True)
+        return
     for index in CARRIER_INDEXES:
         cur.execute(f"DROP INDEX IF EXISTS {index}")
 
@@ -159,8 +193,8 @@ def rebuild_carrier_indexes(conn) -> None:
     conn.autocommit = True
     try:
         with conn.cursor() as cur:
-            cur.execute("SET max_parallel_maintenance_workers = 0")
-            cur.execute("SET maintenance_work_mem = '256MB'")
+            cur.execute("SET max_parallel_maintenance_workers = 2")
+            cur.execute("SET maintenance_work_mem = '1GB'")
             cur.execute("CREATE INDEX IF NOT EXISTS carriers_phone_digits ON carriers (phone_digits)")
             cur.execute("CREATE INDEX IF NOT EXISTS carriers_email ON carriers (lower(email))")
             cur.execute("CREATE INDEX IF NOT EXISTS carriers_state_city ON carriers (phy_state, lower(phy_city))")
@@ -204,8 +238,10 @@ def transform(conn, kind: str, table: str, columns: list[str]) -> None:
     }.get(kind)
     with conn.cursor() as cur:
         if kind in SAFETY_FEEDS or kind == "census":
-            cur.execute(f"SET temp_tablespaces = {SAFETY_TABLESPACE}")
-            cur.execute("SET work_mem = '256MB'")
+            cur.execute("SET work_mem = '512MB'")
+            usable = _tablespace_if_usable(cur, SAFETY_TABLESPACE)
+            if usable:
+                cur.execute(f"SET temp_tablespaces = {usable}")
         if kind == "census":
             print("  dropping carrier search indexes for the census update", flush=True)
             drop_carrier_indexes(cur)
@@ -235,7 +271,11 @@ def transform(conn, kind: str, table: str, columns: list[str]) -> None:
             previous = conn.autocommit
             conn.autocommit = True
             try:
-                cur.execute("CHECKPOINT")
+                try:
+                    cur.execute("CHECKPOINT")
+                except Exception as exc:  # noqa: BLE001 — optional on restricted DB roles
+                    print(f"  checkpoint skipped: {exc}", flush=True)
+                    conn.rollback()
             finally:
                 conn.autocommit = previous
 
@@ -317,12 +357,14 @@ def _census_dockets_sql(table: str, columns: set[str]) -> str:
             """
         )
     union = " UNION ALL ".join(branches)
+    # Leading semicolon required: this SQL is concatenated after _fleet_sql.
     return f"""
+    ;
     TRUNCATE census_dockets;
     INSERT INTO census_dockets (dot_number, slot, prefix, docket_number, status_code)
     SELECT dot_number, slot, prefix, docket_number, status_code
     FROM ({union}) src
-    """
+    ;"""
 
 
 def load_census_dockets(conn, table: str, columns: list[str]) -> None:
@@ -819,19 +861,34 @@ TRANSFORMS = {
 
 
 def recompute(conn) -> None:
+    # Do not DROP indexes here. That took AccessExclusiveLock on carriers and
+    # blocked the live site (carrier pages + Motus) for minutes during safety sync.
     print("  vacuuming carriers", flush=True)
     conn.commit()
     conn.autocommit = True
     with conn.cursor() as cur:
         cur.execute("VACUUM carriers")
     conn.autocommit = False
+
     print("  aggregating 24-month safety and directory scores", flush=True)
-    with conn.cursor() as cur:
-        cur.execute("SET work_mem = '256MB'")
-        drop_carrier_indexes(cur)
-        cur.execute("SELECT recompute_safety_aggregates(NULL)")
-        cur.execute("SELECT recompute_carrier_scores(NULL)")
-        refresh_insurance_cancellations(cur)
-    conn.commit()
+    attempts = 0
+    while True:
+        attempts += 1
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SET work_mem = '256MB'")
+                # Prefer waiting briefly over failing the whole nightly score run.
+                cur.execute("SET lock_timeout = '15s'")
+                cur.execute("SET statement_timeout = '2h'")
+                cur.execute("SELECT recompute_safety_aggregates(NULL)")
+                cur.execute("SELECT recompute_carrier_scores(NULL)")
+                refresh_insurance_cancellations(cur)
+            conn.commit()
+            break
+        except Exception as exc:
+            conn.rollback()
+            if attempts >= 3:
+                raise
+            print(f"  score attempt {attempts} deferred ({exc}); retrying", flush=True)
     print("  scores saved", flush=True)
     rebuild_carrier_indexes(conn)

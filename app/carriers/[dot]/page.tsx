@@ -13,6 +13,8 @@ import {
   formatDate,
   formatMoney,
   formatNumber,
+  bestEmail,
+  bestPhone,
   formatPhone,
   normalizeDot,
   operationLabel,
@@ -258,20 +260,38 @@ export default async function CarrierPage({ params }: { params: Promise<{ dot: s
             </div>
           </div>
           <div className="contact-row">
-            {carrier.phone ? (
-              <Copyable value={carrier.phone} title="Copy phone">
-                {formatPhone(carrier.phone) ?? carrier.phone}
-              </Copyable>
-            ) : (
-              <span>No company phone</span>
-            )}
-            {carrier.email ? (
-              <Copyable value={carrier.email} title="Copy email">
-                {carrier.email}
-              </Copyable>
-            ) : (
-              <span>No company email</span>
-            )}
+            {(() => {
+              const phone = bestPhone(carrier.phone, carrier.cell_phone, carrier.fax);
+              const email = bestEmail(carrier.email, ...officialCards.map((o) => o.email));
+              const officerPhone = bestPhone(...officialCards.map((o) => o.phone));
+              const motusPending = !carrier.motus_officers_at && !carrier.motus_authorities_at;
+              return (
+                <>
+                  {phone ? (
+                    <Copyable value={phone} title="Copy phone">
+                      {formatPhone(phone) ?? phone}
+                    </Copyable>
+                  ) : officerPhone ? (
+                    <Copyable value={officerPhone} title="Copy officer phone">
+                      {formatPhone(officerPhone) ?? officerPhone}
+                    </Copyable>
+                  ) : motusPending ? (
+                    <span className="hint">Contact enrich pending</span>
+                  ) : (
+                    <span>No phone on file</span>
+                  )}
+                  {email ? (
+                    <Copyable value={email} title="Copy email">
+                      {email}
+                    </Copyable>
+                  ) : motusPending ? (
+                    <span className="hint">Email enrich pending</span>
+                  ) : (
+                    <span>No email on file</span>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
         <aside className="official-side">

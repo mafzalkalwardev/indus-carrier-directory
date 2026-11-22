@@ -38,7 +38,9 @@ if (!existsSync(venvPython)) {
   if (installed.status !== 0) process.exit(installed.status ?? 1);
 }
 
-const child = spawnSync(venvPython, ["-m", "fmcsa_ingest", "sync", ...process.argv.slice(2)], {
+const argv = process.argv.slice(2);
+const fmcsaArgs = argv[0] === "score" ? argv : ["sync", ...argv];
+const child = spawnSync(venvPython, ["-m", "fmcsa_ingest", ...fmcsaArgs], {
   cwd: path.join(root, "ingest"),
   stdio: "inherit",
   env: process.env,

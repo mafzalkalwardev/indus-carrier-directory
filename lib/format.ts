@@ -50,6 +50,23 @@ export function formatPhone(value: string | null) {
   return `(${local.slice(0, 3)}) ${local.slice(3, 6)}-${local.slice(6)}`;
 }
 
+/** Prefer company phone, then cell, then fax — FMCSA often leaves phone blank but fills cell. */
+export function bestPhone(...values: Array<string | null | undefined>) {
+  for (const value of values) {
+    const trimmed = value?.trim();
+    if (trimmed) return trimmed;
+  }
+  return null;
+}
+
+export function bestEmail(...values: Array<string | null | undefined>) {
+  for (const value of values) {
+    const trimmed = value?.trim();
+    if (trimmed) return trimmed;
+  }
+  return null;
+}
+
 export function formatDate(value: string | Date | null) {
   if (!value) return "—";
   const date = value instanceof Date ? value : new Date(`${String(value).slice(0, 10)}T00:00:00`);

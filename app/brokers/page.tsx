@@ -3,7 +3,11 @@ import { Copyable } from "@/components/Copyable";
 import { searchBrokers } from "@/lib/brokers";
 import { formatMoney, formatPhone, padDot } from "@/lib/format";
 
-export const metadata = { title: "Broker check" };
+export const metadata = {
+  title: "Broker check",
+  description: "Look up a trucking broker by name or MC before you book. INDUS Transports broker check for dispatchers and carriers.",
+  alternates: { canonical: "/brokers" },
+};
 
 export default async function BrokersPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const q = (await searchParams).q?.trim() ?? "";

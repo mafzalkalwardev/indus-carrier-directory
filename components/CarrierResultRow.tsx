@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Copyable } from "@/components/Copyable";
 import { StatusPill } from "@/components/StatusPill";
 import type { CarrierRow } from "@/lib/carriers";
-import { formatPhone, operationLabel, padDot, recordStatus } from "@/lib/format";
+import { bestEmail, bestPhone, formatPhone, operationLabel, padDot, recordStatus } from "@/lib/format";
 
 type Props = {
   carrier: CarrierRow & { matched_on?: string | null };
@@ -13,6 +13,8 @@ export function CarrierResultRow({ carrier }: Props) {
   const mc = carrier.docket1 ? `${carrier.docket1prefix ?? "MC"} ${carrier.docket1}` : null;
   const asMc = carrier.matched_on === "mc";
   const place = [carrier.phy_city, carrier.phy_state].filter(Boolean).join(", ");
+  const phone = bestPhone(carrier.phone, carrier.cell_phone, carrier.fax);
+  const email = bestEmail(carrier.email);
 
   return (
     <Link className="result" href={`/carriers/${carrier.dot_number}`}>
@@ -41,9 +43,9 @@ export function CarrierResultRow({ carrier }: Props) {
           <div>
             <dt>Phone</dt>
             <dd>
-              {carrier.phone ? (
-                <Copyable value={carrier.phone} title="Copy phone" as="span">
-                  {formatPhone(carrier.phone) ?? carrier.phone}
+              {phone ? (
+                <Copyable value={phone} title="Copy phone" as="span">
+                  {formatPhone(phone) ?? phone}
                 </Copyable>
               ) : (
                 <span className="meta-empty">Not listed</span>
@@ -53,9 +55,9 @@ export function CarrierResultRow({ carrier }: Props) {
           <div>
             <dt>Email</dt>
             <dd>
-              {carrier.email ? (
-                <Copyable value={carrier.email} title="Copy email" as="span">
-                  {carrier.email}
+              {email ? (
+                <Copyable value={email} title="Copy email" as="span">
+                  {email}
                 </Copyable>
               ) : (
                 <span className="meta-empty">Not listed</span>

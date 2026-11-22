@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { JsonLd } from "@/components/JsonLd";
+import { siteOrigin } from "@/lib/site";
 
 const QUESTIONS = [
   {
@@ -43,11 +45,32 @@ const QUESTIONS = [
   },
 ];
 
-export const metadata = { title: "FAQ" };
+export const metadata = {
+  title: "FAQ",
+  description:
+    "Answers about USDOT vs MC, verifying a carrier, dispatch pricing, the INDUS fuel card, lanes, and where FMCSA records come from.",
+  alternates: { canonical: "/faq" },
+};
 
 export default function FaqPage() {
+  const origin = siteOrigin();
+  const faqLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: QUESTIONS.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.a,
+      },
+    })),
+    url: `${origin}/faq`,
+  };
+
   return (
     <main>
+      <JsonLd data={faqLd} />
       <p className="kicker">Answers</p>
       <h1>Questions we get before a truck rolls</h1>
       <p className="lede">DOT and MC, the score, dispatch, the fuel card, and how a shipper books a schedule.</p>
@@ -59,7 +82,9 @@ export default function FaqPage() {
           </details>
         ))}
       </div>
-      <p className="hint">Still need a person? <Link href="/services/dispatch">Send the form</Link> or call sales.</p>
+      <p className="hint">
+        Still stuck? Open the <Link href="/desk">dispatcher desk</Link> or call the Austin line from the footer.
+      </p>
     </main>
   );
 }

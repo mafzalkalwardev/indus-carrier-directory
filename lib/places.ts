@@ -1,14 +1,25 @@
 export type Place = { label: string; value: string };
 
 const CITIES = [
-  "Austin, TX", "Houston, TX", "Dallas, TX", "San Antonio, TX", "El Paso, TX",
-  "Los Angeles, CA", "San Diego, CA", "Fresno, CA", "Chicago, IL", "Atlanta, GA",
-  "Miami, FL", "Orlando, FL", "Jacksonville, FL", "Phoenix, AZ", "Denver, CO",
-  "Seattle, WA", "Portland, OR", "Las Vegas, NV", "New York, NY", "Newark, NJ",
-  "Philadelphia, PA", "Charlotte, NC", "Nashville, TN", "Memphis, TN", "Indianapolis, IN",
-  "Columbus, OH", "Cincinnati, OH", "Detroit, MI", "Minneapolis, MN", "Kansas City, MO",
-  "St Louis, MO", "Oklahoma City, OK", "Tulsa, OK", "Louisville, KY", "Baltimore, MD",
-  "Laredo, TX", "McAllen, TX", "Calgary, AB", "Toronto, ON", "Montreal, QC",
+  "Austin, TX", "Houston, TX", "Dallas, TX", "Fort Worth, TX", "Ft Worth, TX", "San Antonio, TX",
+  "El Paso, TX", "Laredo, TX", "McAllen, TX", "Lubbock, TX", "Amarillo, TX", "Waco, TX",
+  "Midland, TX", "Odessa, TX", "Corpus Christi, TX", "Beaumont, TX", "Tyler, TX", "Mesquite, TX",
+  "Garland, TX", "Irving, TX", "Plano, TX", "Arlington, TX", "Pasadena, TX", "Grand Prairie, TX",
+  "Los Angeles, CA", "Long Beach, CA", "Ontario, CA", "Fontana, CA", "San Diego, CA", "Fresno, CA",
+  "Sacramento, CA", "San Jose, CA", "Oakland, CA", "Stockton, CA", "Bakersfield, CA",
+  "Chicago, IL", "Joliet, IL", "Rockford, IL", "Atlanta, GA", "Savannah, GA", "Macon, GA",
+  "Miami, FL", "Orlando, FL", "Jacksonville, FL", "Tampa, FL", "Lakeland, FL",
+  "Phoenix, AZ", "Tucson, AZ", "Denver, CO", "Colorado Springs, CO",
+  "Seattle, WA", "Tacoma, WA", "Spokane, WA", "Portland, OR", "Las Vegas, NV", "Reno, NV",
+  "New York, NY", "Buffalo, NY", "Newark, NJ", "Philadelphia, PA", "Pittsburgh, PA",
+  "Charlotte, NC", "Raleigh, NC", "Greensboro, NC", "Nashville, TN", "Memphis, TN", "Knoxville, TN",
+  "Indianapolis, IN", "Fort Wayne, IN", "Columbus, OH", "Cincinnati, OH", "Cleveland, OH",
+  "Toledo, OH", "Detroit, MI", "Grand Rapids, MI", "Minneapolis, MN", "Kansas City, MO",
+  "St Louis, MO", "Springfield, MO", "Oklahoma City, OK", "Tulsa, OK", "Louisville, KY",
+  "Baltimore, MD", "Richmond, VA", "Norfolk, VA", "Birmingham, AL", "Mobile, AL",
+  "New Orleans, LA", "Baton Rouge, LA", "Shreveport, LA", "Little Rock, AR",
+  "Salt Lake City, UT", "Boise, ID", "Albuquerque, NM", "Omaha, NE", "Des Moines, IA",
+  "Milwaukee, WI", "Madison, WI", "Calgary, AB", "Toronto, ON", "Montreal, QC",
   "Monterrey, NL", "Mexico City, MX",
 ];
 

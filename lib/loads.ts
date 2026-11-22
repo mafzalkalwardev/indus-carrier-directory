@@ -1,8 +1,9 @@
 import { STATE_NAMES, stateName } from "@/lib/states";
+import { listPostedLoads } from "@/lib/posted-loads";
 
 export type LoadListing = {
   id: string;
-  source: "DOFT" | "Direct Freight" | "C.H. Robinson";
+  source: "DOFT" | "Direct Freight" | "C.H. Robinson" | "Indus" | "Laneora desk" | "Laneora";
   sourceUrl: string;
   pickup: string;
   originCity: string;
@@ -21,6 +22,21 @@ export type LoadListing = {
   brokerEmail: string | null;
   brokerDot: string | null;
   brokerGrade: string | null;
+  notes?: string | null;
+  /** Soft / Laneora extras (optional on public scrapers). */
+  creditScore?: number | null;
+  daysToPay?: number | null;
+  comments?: string[] | null;
+  lengthFt?: number | null;
+  searchId?: string | null;
+  matchId?: string | null;
+  capacity?: string | null;
+  rateAmount?: number | null;
+  ratePerMileAmount?: number | null;
+  /** Origin deadhead miles from the board (DH-O on the result). */
+  originDeadhead?: number | null;
+  /** Compact age label like DAT (e.g. 12m, 2h). */
+  ageShort?: string | null;
 };
 
 export type LoadQuery = {
@@ -117,10 +133,24 @@ export function readLoadQuery(params: { state?: string; city?: string; equipment
 }
 
 export async function availableLoads(query: LoadQuery): Promise<LoadBoardResult> {
-  const [doft, direct, robinson] = await Promise.all([loadDoft(query), loadDirectFreight(query), loadRobinson(query)]);
+  const [posted, doft, direct, robinson] = await Promise.all([
+    listPostedLoads(query).catch(() => [] as LoadListing[]),
+    loadDoft(query),
+    loadDirectFreight(query),
+    loadRobinson(query),
+  ]);
   const notes = [...doft.notes, ...direct.notes, ...robinson.notes];
-  const loads = dedupe([...doft.loads, ...direct.loads, ...robinson.loads].filter((load) => fresh(load.pickup)));
-  loads.sort((a, b) => compareLoads(a, b, query.sort));
+  const publicLoads = dedupe(
+    [...doft.loads, ...direct.loads, ...robinson.loads].filter((load) => fresh(load.pickup)),
+  );
+  // First-party Indus / Laneora desk posts lead the board, then public scrapers.
+  const loads = dedupe([...posted, ...publicLoads]);
+  loads.sort((a, b) => {
+    const aOwn = a.source === "Indus" || a.source === "Laneora desk";
+    const bOwn = b.source === "Indus" || b.source === "Laneora desk";
+    if (aOwn !== bOwn) return aOwn ? -1 : 1;
+    return compareLoads(a, b, query.sort);
+  });
   return { loads, notes };
 }
 

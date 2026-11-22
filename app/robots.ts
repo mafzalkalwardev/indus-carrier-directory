@@ -1,9 +1,17 @@
 import type { MetadataRoute } from "next";
+import { siteOrigin } from "@/lib/site";
 
 export default function robots(): MetadataRoute.Robots {
-  const origin = process.env.SITE_ORIGIN ?? "http://localhost:3000";
+  const origin = siteOrigin();
   return {
-    rules: { userAgent: "*", allow: "/" },
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+        disallow: ["/api/"],
+      },
+    ],
     sitemap: `${origin}/sitemap.xml`,
+    host: origin.replace(/^https?:\/\//, ""),
   };
 }

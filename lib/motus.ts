@@ -1,4 +1,5 @@
 import { getPool, query } from "@/lib/db";
+import { loadsHelperAuthHeaders } from "@/lib/helper-auth";
 
 type MotusOfficer = {
   entityOfficerId?: string | null;
@@ -23,6 +24,13 @@ type MotusRegistration = {
   entityRegistrationOperatingAuthorities?: { entityOperatingAuthority?: MotusAuthority | null }[] | null;
 };
 
+type MotusBody = {
+  entityOfficers?: MotusOfficer[];
+  entityRegistrations?: MotusRegistration[];
+  phoneNumbers?: { phoneNumber?: string | null }[];
+  emailAddresses?: { emailAddress?: string | null }[];
+};
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export async function refreshMotusOfficers(dot: string) {
@@ -37,17 +45,11 @@ export async function refreshMotusOfficers(dot: string) {
 
   let officers: MotusOfficer[] = [];
   let authorities: { docket: string; type: string; status: string | null }[] = [];
+  let companyPhone: string | null = null;
+  let companyEmail: string | null = null;
   try {
-    const response = await fetch(`https://motus.dot.gov/api/carriers/${encodeURIComponent(dot)}`, {
-      headers: { Accept: "application/json", "User-Agent": "carrier-directory/1.0" },
-      signal: AbortSignal.timeout(4000),
-      cache: "no-store",
-    });
-    if (!response.ok) return;
-    const body = (await response.json()) as {
-      entityOfficers?: MotusOfficer[];
-      entityRegistrations?: MotusRegistration[];
-    };
+    const body = await fetchMotusBody(dot);
+    if (!body) return;
     officers = (body.entityOfficers ?? []).filter((officer) => !officer.disableDate);
     authorities = (body.entityRegistrations ?? []).flatMap((registration) =>
       (registration.entityRegistrationOperatingAuthorities ?? []).flatMap((row) => {
@@ -62,6 +64,8 @@ export async function refreshMotusOfficers(dot: string) {
         }];
       }),
     );
+    companyPhone = blank(body.phoneNumbers?.[0]?.phoneNumber);
+    companyEmail = blank(body.emailAddresses?.[0]?.emailAddress)?.toLowerCase() ?? null;
   } catch {
     return;
   }
@@ -108,14 +112,44 @@ export async function refreshMotusOfficers(dot: string) {
       );
     }
     await client.query(
-      `UPDATE carriers SET motus_officers_at = now(), motus_authorities_at = now() WHERE dot_number = $1`,
-      [dot],
+      `UPDATE carriers SET
+         phone = COALESCE(nullif(trim(phone),''), $2),
+         phone_digits = COALESCE(nullif(phone_digits,''), regexp_replace(COALESCE($2,''), '\\D', '', 'g')),
+         email = COALESCE(nullif(trim(email),''), $3),
+         motus_officers_at = now(),
+         motus_authorities_at = now()
+       WHERE dot_number = $1`,
+      [dot, companyPhone, companyEmail],
     );
     await client.query("COMMIT");
   } catch {
     await client.query("ROLLBACK");
   } finally {
     client.release();
+  }
+}
+
+async function fetchMotusBody(dot: string): Promise<MotusBody | null> {
+  const proxy = (process.env.MOTUS_PROXY_BASE ?? "http://127.0.0.1:8799").replace(/\/+$/, "");
+  // Prefer Chrome CDP proxy (US VPN). Direct Motus from cloud IPs is Akamai-blocked.
+  try {
+    const response = await fetch(`${proxy}/motus/${encodeURIComponent(dot)}`, {
+      headers: loadsHelperAuthHeaders({ Accept: "application/json" }),
+      signal: AbortSignal.timeout(20000),
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+    const wrapped = (await response.json()) as {
+      ok?: boolean;
+      status?: number;
+      empty?: boolean;
+      data?: MotusBody | null;
+    };
+    if (!wrapped.ok || wrapped.empty || wrapped.status === 404) return wrapped.data ?? null;
+    if (wrapped.status && wrapped.status !== 200) return null;
+    return wrapped.data ?? null;
+  } catch {
+    return null;
   }
 }
 

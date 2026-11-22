@@ -1,76 +1,123 @@
 import Link from "next/link";
 import { Copyable } from "@/components/Copyable";
 import { formatPhone } from "@/lib/format";
+import { getLoadDetail } from "@/lib/laneora";
+import { getCachedLiveLoad } from "@/lib/live-load-cache";
 
-export const metadata = { title: "Load" };
+export const metadata = { title: "Load detail" };
 
 export default async function LoadDetailPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  const load = await searchParams;
-  const origin = load.origin ?? "Origin not listed";
-  const destination = load.destination ?? "Destination not listed";
-  const broker = load.broker?.trim() ?? "";
+  const params = await searchParams;
+  const searchId = params.search_id?.trim() ?? "";
+  const matchId = (params.match_id ?? params.id ?? "").trim();
+  const wantsLive = Boolean(searchId && matchId);
+  const cached = wantsLive ? getCachedLiveLoad(searchId, matchId) : null;
+
+  let boardDetail: Awaited<ReturnType<typeof getLoadDetail>> | null = null;
+  if (wantsLive) {
+    try {
+      boardDetail = await getLoadDetail(searchId, matchId);
+    } catch {
+      boardDetail = null;
+    }
+  }
+
+  const origin = cached
+    ? `${cached.originCity}, ${cached.originState}`
+    : (params.origin ?? "Origin not listed");
+  const destination = cached
+    ? `${cached.destinationCity}, ${cached.destinationState}`
+    : (params.destination ?? "Destination not listed");
+  const broker = (cached?.brokerName ?? params.broker)?.trim() ?? "";
+  const phone = cached?.brokerPhone ?? "";
+  const email = cached?.brokerEmail ?? "";
+  const rate = cached?.rate ?? params.rate ?? "";
+  const rpm = cached?.perMile ?? params.rpm ?? "";
+  const miles = cached?.miles != null ? String(cached.miles) : (params.miles ?? "");
+  const equipment = cached?.equipment ?? params.equipment ?? "";
+  const weight = cached?.weight ?? params.weight ?? "";
+  const length = cached?.lengthFt != null ? String(cached.lengthFt) : (params.length ?? "");
+  const pickup = cached?.pickup ?? params.pickup ?? "";
+  const age = cached?.ageShort ?? cached?.postedAge ?? params.age ?? "";
+  const credit = cached?.creditScore != null
+    ? String(cached.creditScore)
+    : (cached?.brokerGrade ?? params.credit ?? params.grade ?? "");
+  const daysToPay = cached?.daysToPay != null ? String(cached.daysToPay) : (params.days_to_pay ?? "");
+  const comments = cached?.comments?.join(" · ") || cached?.notes || "";
+  const dh = cached?.originDeadhead;
+  const dotNumber = boardDetail?.dot?.dot_number || params.dot || "";
+  const brokerMc = boardDetail?.dot?.broker_mc || "";
 
   return (
-    <main>
-      <p className="kicker"><Link href="/loads">Loads</Link></p>
-      <h1>{origin} → {destination}</h1>
-      <p className="lede">{load.source ?? "Public board"} · {load.age ?? "Age not listed"}</p>
-      <section className="snap">
-        <h2>Load</h2>
-        <div className="facts">
-          <div className="fact"><span>Pickup</span><b>{load.pickup || "—"}</b></div>
-          <div className="fact"><span>Origin</span><b>{origin}</b></div>
-          <div className="fact"><span>Destination</span><b>{destination}</b></div>
-          <div className="fact"><span>Trailer</span><b>{load.equipment || "—"}</b></div>
-          <div className="fact"><span>Length</span><b>{load.size || "—"}</b></div>
-          <div className="fact"><span>Weight</span><b>{load.weight || "—"}</b></div>
-          <div className="fact"><span>Miles</span><b>{load.miles ? `${Number(load.miles).toLocaleString()} mi` : "—"}</b></div>
-          <div className="fact"><span>Rate</span><b>{load.rate || "Not on the public row"}</b></div>
-          <div className="fact"><span>Per mile</span><b>{load.rpm || "Not on the public row"}</b></div>
-          <div className="fact"><span>Posted</span><b>{load.age || "Not listed"}</b></div>
+    <main className="dat-detail">
+      <p className="dat-detail-crumb"><Link href="/loads">← Search loads</Link></p>
+      <header className="dat-detail-head">
+        <div>
+          <p className="dat-detail-age">{age || "Age —"}</p>
+          <h1>{origin} → {destination}</h1>
         </div>
-        {load.url ? <p><a href={load.url} target="_blank" rel="noreferrer">Open this load on {load.source ?? "the board"}</a></p> : null}
-      </section>
-      <section className="snap">
-        <h2>Broker</h2>
-        {broker ? (
-          <>
-            <p>
-              <strong>
-                <Copyable value={broker} className="name" title="Copy broker name">
-                  {broker}
-                </Copyable>
-              </strong>
-              {load.grade ? ` · Grade ${load.grade}` : ""}
+        <div className="dat-detail-rate">
+          <b>{rate || "Rate on board"}</b>
+          <span>{rpm || "—"}{miles ? ` · ${Number(miles).toLocaleString()} mi` : ""}</span>
+        </div>
+      </header>
+
+      <div className="dat-detail-grid">
+        <section>
+          <h2>Shipment</h2>
+          <dl className="dat-dl">
+            <div><dt>Pickup</dt><dd>{pickup || "—"}</dd></div>
+            <div><dt>Origin</dt><dd>{origin}{dh != null ? ` (${dh} DH)` : ""}</dd></div>
+            <div><dt>Destination</dt><dd>{destination}</dd></div>
+            <div><dt>Equipment</dt><dd>{equipment || "—"}</dd></div>
+            <div><dt>Length</dt><dd>{length ? `${length} ft` : "—"}</dd></div>
+            <div><dt>Weight</dt><dd>{weight || "—"}</dd></div>
+            <div><dt>Trip</dt><dd>{miles ? `${Number(miles).toLocaleString()} mi` : "—"}</dd></div>
+          </dl>
+          {comments ? <p className="dat-detail-comments">{comments}</p> : null}
+        </section>
+        <section>
+          <h2>Company</h2>
+          {broker ? (
+            <>
+              <p className="dat-detail-broker">
+                <Copyable value={broker} title="Copy company">{broker}</Copyable>
+              </p>
+              <dl className="dat-dl">
+                <div>
+                  <dt>Phone</dt>
+                  <dd>
+                    {phone ? (
+                      <Copyable value={phone} title="Copy phone">{formatPhone(phone) ?? phone}</Copyable>
+                    ) : "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Email</dt>
+                  <dd>
+                    {email ? <Copyable value={email} title="Copy email">{email}</Copyable> : "—"}
+                  </dd>
+                </div>
+                <div><dt>Credit</dt><dd>{credit || "—"}</dd></div>
+                <div><dt>Days to pay</dt><dd>{daysToPay || "—"}</dd></div>
+                {dotNumber ? <div><dt>DOT</dt><dd>{dotNumber}</dd></div> : null}
+                {brokerMc ? <div><dt>Broker MC</dt><dd>{brokerMc}</dd></div> : null}
+              </dl>
+              {dotNumber ? <p><Link href={`/carriers/${dotNumber}`}>Open carrier record</Link></p> : null}
+            </>
+          ) : (
+            <p className="hint">
+              {wantsLive && !cached
+                ? "Open this load again from search results to see company contact."
+                : "Company not listed on this row."}
             </p>
-            <div className="contact-inline">
-              {load.phone ? (
-                <Copyable value={load.phone} title="Copy phone">
-                  {formatPhone(load.phone) ?? load.phone}
-                </Copyable>
-              ) : (
-                <span className="hint">No public phone on this row</span>
-              )}
-              {load.email ? (
-                <Copyable value={load.email} title="Copy email">
-                  {load.email}
-                </Copyable>
-              ) : (
-                <span className="hint">No public email on this row</span>
-              )}
-            </div>
-            {load.dot ? <p className="hint">DOT {load.dot}</p> : null}
-            {load.dot ? <p><Link href={`/carriers/${load.dot}`}>Open the broker record</Link></p> : null}
-            <p><Link href={`/brokers?q=${encodeURIComponent(broker)}`}>Run a broker check</Link></p>
-          </>
-        ) : (
-          <p className="hint">This public row does not name the broker. Search the MC on the broker check if you have it.</p>
-        )}
-      </section>
+          )}
+        </section>
+      </div>
     </main>
   );
 }
